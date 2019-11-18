@@ -14,7 +14,7 @@ abstract class FunctionalCommand extends Command {
 
 abstract class CommandHandler<C extends Command> {
   Type handling = C;
-  handle(C command);  
+  handle(C command);
 }
 
 typedef Null FunctionalCommandHandler<C extends FunctionalCommand>(C command);
@@ -50,7 +50,9 @@ class AppState {
   }
 
   static final String initializedError =
-      "AppState should be initialized, make sure you call _appState.init()";
+      "AppState should be initialized, make sure you call initAppState() once";
+  static final String storesNotRegisteredError =
+      "Store must be registered, make sure you call addStore(Store)";
 }
 
 var _appState = AppState();
@@ -154,7 +156,7 @@ _commandCannotBeCreatedException() => Exception("Command cannot be created");
 /// store
 
 abstract class Store {
-  dispose();
+  dispose() {}
 }
 
 addStore(Store store) {
@@ -163,6 +165,8 @@ addStore(Store store) {
 }
 
 S getStore<S extends Store>() {
-    assert(_appState.isInitialized, AppState.initializedError);
-    return _appState.stores.whereType<S>()?.first;
-  }
+  assert(_appState.isInitialized, AppState.initializedError);
+  final stores = _appState.stores.whereType<S>();
+  assert(stores.isNotEmpty, AppState.storesNotRegisteredError);
+  return stores.isNotEmpty ? stores.first : null;
+}

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fttq/fttq.dart';
 
 void main() {
+  initAppState();
+  addStore(MyThingsStore());
   registerHandler(IncrementCounterHandler());
-  registerHandler(DecrementCounterHandler());
   runApp(MyApp());
 }
 
@@ -13,11 +14,11 @@ class MyApp extends StatelessWidget {
     fire(CounterInitialized());
 
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Eventstate',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Counter - example'),
     );
   }
 }
@@ -85,26 +86,21 @@ class MyHomePage extends StatelessWidget {
   }
 }
 
-int counter = 0;
-
-class IncrementCounterHandler extends CommandHandler<IncrementCounter> {
-  handle(IncrementCounter command) {
-    counter++;
-    fire(CounterUpdated(counter));
-  }
+class MyThingsStore extends Store {
+  int counter = 0;
 }
 
-class DecrementCounterHandler extends CommandHandler<DecrementCounter> {
-  handle(DecrementCounter command) {
-    counter--;
-    fire(CounterUpdated(counter));
+class IncrementCounterHandler extends CommandHandler<IncrementCounter> {
+  final MyThingsStore store;
+  IncrementCounterHandler() : store = getStore<MyThingsStore>();
+  
+  handle(IncrementCounter command) {
+    store.counter++;
+    fire(CounterUpdated(store.counter));
   }
 }
 
 class IncrementCounter extends Command {}
-
-class DecrementCounter extends Command {}
-
 class CounterInitialized extends Event {}
 
 class CounterUpdated extends Event {

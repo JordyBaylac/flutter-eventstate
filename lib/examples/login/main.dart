@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:fttq/domain/login/commands.dart';
-import 'package:fttq/domain/login/events.dart';
-import 'package:fttq/domain/login/store.dart';
+
 import 'package:fttq/fttq.dart';
+
+import 'domain/commands.dart';
+import 'domain/events.dart';
+import 'domain/store.dart';
 
 void main() {
   initAppState();
   addStore(AuthStore());
   registerHandler(LoginHandler());
-  
+
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(

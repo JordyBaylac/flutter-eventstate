@@ -1,29 +1,24 @@
 import 'package:flutter/material.dart';
-
 import 'package:fttq/fttq.dart';
-
-import 'examples/login/domain/login/commands.dart';
-import 'examples/login/domain/login/events.dart';
-import 'examples/login/domain/login/store.dart';
 
 void main() {
   initAppState();
-  addStore(AuthStore());
-  registerHandler(LoginHandler());
-
+  addStore(MyThingsStore());
+  registerHandler(IncrementCounterHandler());
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    fire(CounterInitialized());
 
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Eventstate',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Counter - example'),
     );
   }
 }
@@ -43,54 +38,73 @@ class MyHomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Container(
-              color: Colors.red,
-              padding: EdgeInsets.all(20),
-              child: StreamBuilder(
-                stream: listen<LoginFailed>(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Text("unexpected error during LoginFailed!!");
-                  }
-                  if (!snapshot.hasData) {
-                    return Text("LoginFailed?? nothing ...");
-                  }
-                  return Text("LoginFailed, try other email",
-                      style: Theme.of(context).textTheme.body1);
-                },
-              ),
+            Text(
+              'You have pushed the button this many times:',
+            ),
+            StreamBuilder(
+              stream: listen<CounterInitialized>(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Text("error receiving CounterInitialized!!");
+                }
+                if (!snapshot.hasData) {
+                  return Text("Initializing ...");
+                }
+                return Text("Counter has been initialized",
+                    style: Theme.of(context).textTheme.body1);
+              },
             ),
             SizedBox(
               height: 40,
             ),
-            Container(
-              color: Colors.green,
-              padding: EdgeInsets.all(20),
-              child: StreamBuilder(
-                stream: listen<LoginOk>(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Text("error receiving LoginOk!!");
-                  }
-                  if (!snapshot.hasData) {
-                    return Text("Touch the USER button ...");
-                  }
-                  print("Login successful");
-                  return Text("Login successful",
-                      style: Theme.of(context).textTheme.body1);
-                },
-              ),
+            StreamBuilder(
+              stream: listen<CounterUpdated>(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Text("error receiving CounterUpdated!!");
+                }
+                if (!snapshot.hasData) {
+                  return Text("Touch the + button ...");
+                }
+                var eventInfo = snapshot.data as CounterUpdated;
+                print("CounterUpdated handled, data is ${eventInfo.counter}");
+                return Text("${eventInfo.counter}",
+                    style: Theme.of(context).textTheme.body1);
+              },
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          trigger(LoginCmd("admin"));
+          trigger(IncrementCounter());
         },
-        tooltip: 'LOGIN',
-        child: Icon(Icons.supervised_user_circle),
+        tooltip: 'Increment',
+        child: Icon(Icons.add),
       ),
     );
   }
+}
+
+class MyThingsStore extends Store {
+  int counter = 0;
+}
+
+class IncrementCounterHandler extends CommandHandler<IncrementCounter> {
+  final MyThingsStore store;
+  IncrementCounterHandler() : store = getStore<MyThingsStore>();
+  
+  handle(IncrementCounter command) {
+    store.counter++;
+    fire(CounterUpdated(store.counter));
+  }
+}
+
+class IncrementCounter extends Command {}
+class CounterInitialized extends Event {}
+
+class CounterUpdated extends Event {
+  final int counter;
+
+  CounterUpdated(this.counter);
 }
