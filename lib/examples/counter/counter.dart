@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fttq/fttq.dart';
 
 void main() {
-  initAppState();
-  addStore(MyThingsStore());
-  registerHandler(IncrementCounterHandler());
+  initAppState()
+  .registerStore(MyThingsStore())
+  .registerHandler(IncrementCounterHandler());
   runApp(MyApp());
 }
 
@@ -93,7 +93,7 @@ class MyThingsStore extends Store {
 class IncrementCounterHandler extends CommandHandler<IncrementCounter> {
   final MyThingsStore store;
   IncrementCounterHandler() : store = getStore<MyThingsStore>();
-  
+
   handle(IncrementCounter command) {
     store.counter++;
     fire(CounterUpdated(store.counter));
@@ -101,6 +101,7 @@ class IncrementCounterHandler extends CommandHandler<IncrementCounter> {
 }
 
 class IncrementCounter extends Command {}
+
 class CounterInitialized extends Event {}
 
 class CounterUpdated extends Event {

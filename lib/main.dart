@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:fttq/fttq.dart';
+import 'package:rxdart/rxdart.dart';
 
 void main() {
-  initAppState();
-  addStore(MyThingsStore());
-  registerHandler(IncrementCounterHandler());
+  initAppState()
+      .registerStore(MyThingsStore())
+      .registerHandler(IncrementCounterHandler())
+      .registerHandler(CounterUpdatedHandler());
   runApp(MyApp());
 }
 
@@ -67,7 +69,7 @@ class MyHomePage extends StatelessWidget {
                   return Text("Touch the + button ...");
                 }
                 var eventInfo = snapshot.data as CounterUpdated;
-                print("CounterUpdated handled, data is ${eventInfo.counter}");
+                
                 return Text("${eventInfo.counter}",
                     style: Theme.of(context).textTheme.body1);
               },
@@ -93,7 +95,7 @@ class MyThingsStore extends Store {
 class IncrementCounterHandler extends CommandHandler<IncrementCounter> {
   final MyThingsStore store;
   IncrementCounterHandler() : store = getStore<MyThingsStore>();
-  
+
   handle(IncrementCounter command) {
     store.counter++;
     fire(CounterUpdated(store.counter));
@@ -101,10 +103,17 @@ class IncrementCounterHandler extends CommandHandler<IncrementCounter> {
 }
 
 class IncrementCounter extends Command {}
+
 class CounterInitialized extends Event {}
 
 class CounterUpdated extends Event {
   final int counter;
 
   CounterUpdated(this.counter);
+}
+
+class CounterUpdatedHandler extends EventHandler<CounterUpdated> {
+  handle(CounterUpdated event) {
+    print("it seems that counter has been updated, now is: ${event.counter}");
+  }
 }

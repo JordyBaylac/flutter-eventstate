@@ -1,40 +1,36 @@
 library fttq;
 
-import 'dart:math';
-
 import 'package:rxdart/rxdart.dart';
 
 abstract class Event {}
 
 abstract class Command {}
 
-abstract class FunctionalCommand extends Command {
-  final key = _appState.random.nextInt(999999);
+abstract class Handler<T> {
+  Type handling = T;
 }
 
-abstract class CommandHandler<C extends Command> {
-  Type handling = C;
+abstract class CommandHandler<C extends Command> extends Handler<C> {
   handle(C command);
 }
 
-typedef Null FunctionalCommandHandler<C extends FunctionalCommand>(C command);
+abstract class EventHandler<E extends Event> extends Handler<E> {
+  handle(E event);
+}
 
 class AppState {
   List<Store> stores;
   BehaviorSubject events;
-
   Map<Type, CommandHandler> commandHandlers;
-  Map<int, FunctionalCommandHandler> functionalCommandHandlers;
+  Map<Type, EventHandler> eventHandlers;
 
   bool isInitialized = false;
-
-  final random = Random(77131);
 
   init() {
     stores = [];
     events = BehaviorSubject();
     commandHandlers = Map<Type, CommandHandler>();
-    functionalCommandHandlers = Map<int, FunctionalCommandHandler>();
+    eventHandlers = Map<Type, EventHandler>();
     isInitialized = true;
   }
 
@@ -45,8 +41,30 @@ class AppState {
     }
 
     events?.close();
-    commandHandlers.clear();
-    functionalCommandHandlers.clear();
+    commandHandlers?.clear();
+  }
+
+  AppState registerHandler(Handler handler) {
+    assert(isInitialized, initializedError);
+    Type key = handler.handling;
+    // print("registered handler for command:: $C");
+
+    if (handler is CommandHandler) {
+      if (commandHandlers.containsKey(key)) {
+        throw CommandAlreadyHandledException();
+      }
+      commandHandlers[key] = handler;
+    } else if (handler is EventHandler) {
+      eventHandlers[key] = handler;
+    }
+
+    return this;
+  }
+
+  AppState registerStore(Store store) {
+    assert(isInitialized, initializedError);
+    stores.add(store);
+    return this;
   }
 
   static final String initializedError =
@@ -59,8 +77,9 @@ var _appState = AppState();
 
 class AppStateConfig {}
 
-initAppState({AppStateConfig config}) {
+AppState initAppState({AppStateConfig config}) {
   _appState.init();
+  return _appState;
 }
 
 /// easy functions
@@ -73,6 +92,9 @@ Stream<E> listen<E extends Event>() {
 fire<E extends Event>(E event) {
   assert(_appState.isInitialized, AppState.initializedError);
   _appState.events.add(event);
+  if (_appState.eventHandlers.containsKey(E)) {
+    _appState.eventHandlers[E].handle(event);
+  }
 }
 
 trigger<C extends Command>(C command) {
@@ -80,67 +102,9 @@ trigger<C extends Command>(C command) {
   // print("triggering command:: $C");
   if (_appState.commandHandlers.containsKey(C)) {
     _appState.commandHandlers[C].handle(command);
-  } else if (command is FunctionalCommand) {
-    if (_appState.functionalCommandHandlers.containsKey(command.key)) {
-      _appState.functionalCommandHandlers[command.key](command);
-    } else {
-      throw _commandNotHandledException(command.runtimeType);
-    }
   } else {
     throw _commandNotHandledException(C.runtimeType);
   }
-}
-
-registerHandler(CommandHandler handler) {
-  assert(_appState.isInitialized, AppState.initializedError);
-  Type C = handler.handling;
-  // print("registered handler for command:: $C");
-  if (_appState.commandHandlers.containsKey(C)) {
-    throw _commandAlreadyHandledException(C);
-  }
-  _appState.commandHandlers[C] = handler;
-}
-
-Command createCommand([Object value]) {
-  if (value == null) {
-    return EmptyCommand();
-  }
-
-  if (value is String) {
-    return StringCommand(value);
-  }
-
-  if (value is int) {
-    return IntCommand(value);
-  }
-  throw _commandCannotBeCreatedException();
-}
-
-registerFunctionalHandler(
-    FunctionalCommand forCommand, FunctionalCommandHandler handler) {
-  assert(_appState.isInitialized, AppState.initializedError);
-  final key = forCommand.key;
-  // print("registered handler for command with key:: $key");
-  if (_appState.functionalCommandHandlers.containsKey(key)) {
-    throw _commandAlreadyHandledException(forCommand.runtimeType);
-  }
-  _appState.functionalCommandHandlers[key] = handler;
-}
-
-/// easy functional commands
-
-class EmptyCommand extends FunctionalCommand {}
-
-class StringCommand extends FunctionalCommand {
-  final String value;
-
-  StringCommand(this.value);
-}
-
-class IntCommand extends FunctionalCommand {
-  final int value;
-
-  IntCommand(this.value);
 }
 
 /// exceptions
@@ -148,10 +112,10 @@ class IntCommand extends FunctionalCommand {
 _commandNotHandledException(Type commandType) => Exception(
     "Command ($commandType) is not being handled by any CommandHandler");
 
-_commandAlreadyHandledException(Type commandType) => Exception(
-    "Command ($commandType) is already being handled by a CommandHandler");
-
-_commandCannotBeCreatedException() => Exception("Command cannot be created");
+class CommandAlreadyHandledException implements Exception {
+  const CommandAlreadyHandledException();
+  String toString() => "Command is Already being handled";
+}
 
 /// store
 
@@ -159,14 +123,9 @@ abstract class Store {
   dispose() {}
 }
 
-addStore(Store store) {
-  assert(_appState.isInitialized, AppState.initializedError);
-  _appState.stores.add(store);
-}
-
 S getStore<S extends Store>() {
   assert(_appState.isInitialized, AppState.initializedError);
   final stores = _appState.stores.whereType<S>();
   assert(stores.isNotEmpty, AppState.storesNotRegisteredError);
-  return stores.isNotEmpty ? stores.first : null;
+  return stores.first;
 }

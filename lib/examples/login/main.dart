@@ -7,10 +7,9 @@ import 'domain/events.dart';
 import 'domain/store.dart';
 
 void main() {
-  initAppState();
-  addStore(AuthStore());
-  registerHandler(LoginHandler());
-
+  initAppState()
+    .registerStore(AuthStore())
+    .registerHandler(LoginHandler());
   runApp(MyApp());
 }
 
