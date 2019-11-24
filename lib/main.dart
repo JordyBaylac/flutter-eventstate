@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fttq/fttq.dart';
-import 'package:rxdart/rxdart.dart';
 
 void main() {
   initAppState()
       .registerStore(MyThingsStore())
-      .registerHandler(IncrementCounterHandler())
       .registerHandler(IncrementCounterHandler())
       .registerHandler(CounterUpdatedHandler());
   runApp(MyApp());

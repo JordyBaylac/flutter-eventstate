@@ -103,7 +103,7 @@ trigger<C extends Command>(C command) {
   if (_appState.commandHandlers.containsKey(C)) {
     _appState.commandHandlers[C].handle(command);
   } else {
-    throw CommandNotHandledException(C.runtimeType);
+    throw CommandNotHandledException(C);
   }
 }
 
@@ -112,7 +112,7 @@ trigger<C extends Command>(C command) {
 class CommandNotHandledException implements Exception {
   final Type commandType;
   const CommandNotHandledException(this.commandType);
-  String toString() => "Command '$commandType' is not being handled by any CommandHandler";
+  String toString() => "Command '$commandType' is not being handled. Please, define a class that extends from CommandHandler<$commandType>";
 }
 
 class CommandAlreadyHandledException implements Exception {
