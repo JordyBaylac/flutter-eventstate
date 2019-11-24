@@ -51,7 +51,7 @@ class AppState {
 
     if (handler is CommandHandler) {
       if (commandHandlers.containsKey(key)) {
-        throw CommandAlreadyHandledException();
+        throw CommandAlreadyHandledException(key, handledBy: commandHandlers[key].runtimeType);
       }
       commandHandlers[key] = handler;
     } else if (handler is EventHandler) {
@@ -103,18 +103,23 @@ trigger<C extends Command>(C command) {
   if (_appState.commandHandlers.containsKey(C)) {
     _appState.commandHandlers[C].handle(command);
   } else {
-    throw _commandNotHandledException(C.runtimeType);
+    throw CommandNotHandledException(C.runtimeType);
   }
 }
 
 /// exceptions
 
-_commandNotHandledException(Type commandType) => Exception(
-    "Command ($commandType) is not being handled by any CommandHandler");
+class CommandNotHandledException implements Exception {
+  final Type commandType;
+  const CommandNotHandledException(this.commandType);
+  String toString() => "Command '$commandType' is not being handled by any CommandHandler";
+}
 
 class CommandAlreadyHandledException implements Exception {
-  const CommandAlreadyHandledException();
-  String toString() => "Command is Already being handled";
+  final Type commandType;
+  final Type handledBy;
+  const CommandAlreadyHandledException(this.commandType, {this.handledBy});
+  String toString() => "Command '$commandType' is already being handled. CommandHandler is '$handledBy'";
 }
 
 /// store

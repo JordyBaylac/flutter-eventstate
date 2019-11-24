@@ -6,6 +6,7 @@ void main() {
   initAppState()
       .registerStore(MyThingsStore())
       .registerHandler(IncrementCounterHandler())
+      .registerHandler(IncrementCounterHandler())
       .registerHandler(CounterUpdatedHandler());
   runApp(MyApp());
 }
